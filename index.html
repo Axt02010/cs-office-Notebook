@@ -1,0 +1,1333 @@
+```html
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CS Office Notebook</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons CDN -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- PDF.js CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
+    <script>
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
+    </script>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Plus Jakarta Sans', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <style>
+        .perspective-1000 { perspective: 1000px; }
+        .preserve-3d { transform-style: preserve-3d; }
+        .backface-hidden { backface-visibility: hidden; }
+        .rotate-y-180 { transform: rotateY(180deg); }
+        
+        /* Smooth Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 5px;
+            height: 5px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .dark ::-webkit-scrollbar-thumb {
+            background: #27272a;
+            border-radius: 99px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #e4e4e7;
+            border-radius: 99px;
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-zinc-950 text-zinc-100 transition-colors duration-300 antialiased selection:bg-indigo-500/30 selection:text-indigo-200">
+
+    <!-- Toast Notifications -->
+    <div id="toast-container" class="fixed top-24 right-6 z-50 pointer-events-none flex flex-col gap-2"></div>
+
+    <!-- Top Header -->
+    <header class="sticky top-0 z-30 backdrop-blur-md border-b bg-zinc-950/80 border-zinc-900 px-6 py-4 transition-colors duration-300" id="main-header">
+        <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div class="flex items-center space-x-3">
+                <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-500 to-purple-600 p-[1px] flex items-center justify-center">
+                    <div class="w-full h-full bg-zinc-950 rounded-[10px] flex items-center justify-center">
+                        <i data-lucide="laptop" class="w-4 h-4 text-indigo-400"></i>
+                    </div>
+                </div>
+                <div>
+                    <div class="flex items-center space-x-2">
+                        <h1 class="text-sm font-bold tracking-tight text-white" id="brand-title">CS Office Notebook</h1>
+                        <span class="text-[9px] uppercase font-bold px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">2.5 Flash</span>
+                    </div>
+                    <p class="text-[10px] text-zinc-500">Premium CS Material & Research Slide Analyzer</p>
+                </div>
+            </div>
+
+            <div class="flex items-center space-x-3">
+                <button
+                    onclick="toggleKeyInput()"
+                    id="key-badge"
+                    class="flex items-center space-x-1.5 px-3 py-1.5 rounded-full text-[10px] font-bold border transition-all bg-zinc-900 border-zinc-800 text-zinc-400 hover:text-zinc-250"
+                >
+                    <i data-lucide="key" class="w-3 h-3"></i>
+                    <span id="key-badge-text">Configure Gemini API</span>
+                </button>
+
+                <button 
+                    onclick="toggleDarkMode()"
+                    id="theme-toggle"
+                    class="p-2 rounded-xl border bg-zinc-900/60 border-zinc-800 text-yellow-400 hover:bg-zinc-900 transition-all"
+                >
+                    <i data-lucide="sun" class="w-3.5 h-3.5"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- API Key Setup Modal/Panel -->
+        <div id="key-input-panel" class="hidden max-w-7xl mx-auto mt-4 p-4 rounded-xl border border-dashed border-zinc-800 bg-zinc-950/40 flex flex-col sm:flex-row items-center justify-between gap-3">
+            <div>
+                <h4 class="text-[11px] font-bold text-zinc-350">Set Gemini 2.5 Flash API Key</h4>
+                <p class="text-[10px] text-zinc-500">Used securely straight from your browser to run high-fidelity queries.</p>
+            </div>
+            <div class="flex w-full sm:w-auto items-center space-x-2">
+                <input
+                    type="password"
+                    id="api-key-input"
+                    placeholder="Enter Gemini API Key..."
+                    class="p-2 text-xs rounded-lg border border-zinc-800 bg-zinc-900 text-white w-full sm:w-64 focus:outline-none focus:border-indigo-500"
+                />
+                <button
+                    onclick="saveApiKey()"
+                    class="px-3 py-2 bg-indigo-500 hover:bg-indigo-600 text-white text-xs font-bold rounded-lg transition-colors"
+                >
+                  Save
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="max-w-7xl mx-auto px-4 md:px-6 py-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
+        
+        <!-- Left Panel: Library & Slide Viewer -->
+        <div class="lg:col-span-3 space-y-4">
+            <div class="p-4 rounded-xl border bg-zinc-900/25 border-zinc-850" id="library-panel-card">
+                <div class="flex items-center justify-between mb-3">
+                    <h3 class="text-[10px] font-bold uppercase tracking-wider text-zinc-450">Active Library Items</h3>
+                    <span id="selected-count-badge" class="text-[10px] text-indigo-400 font-bold">0 Selected</span>
+                </div>
+
+                <p class="text-[10px] text-zinc-500 mb-4">Click inside any paper below to load it into the central premium Slide Viewer.</p>
+
+                <!-- Documents List -->
+                <div id="sources-list" class="space-y-2 max-h-[320px] overflow-y-auto pr-1">
+                    <!-- Dynamic sources inject here -->
+                </div>
+
+                <button
+                    onclick="openAddSourceModal()"
+                    class="w-full mt-3 py-2 bg-zinc-950/60 border border-dashed border-zinc-800 rounded-lg text-xs text-zinc-400 hover:text-zinc-200 flex items-center justify-center space-x-1.5 transition-colors"
+                >
+                    <i data-lucide="plus" class="w-3 h-3"></i>
+                    <span>Add Document / PDF</span>
+                </button>
+            </div>
+
+            <!-- Slide/Page Viewer Container -->
+            <div id="viewer-container" class="p-4 rounded-xl border bg-zinc-900/10 border-zinc-850 space-y-3 hidden">
+                <div class="flex items-center justify-between border-b border-zinc-900/60 pb-2">
+                    <span class="text-[10px] font-bold text-indigo-400 uppercase tracking-widest flex items-center">
+                        <i data-lucide="eye" class="w-3 h-3 mr-1"></i>
+                        Slide / Page Viewer
+                    </span>
+                    
+                    <button
+                        onclick="deleteCurrentSource()"
+                        class="p-1 rounded text-zinc-500 hover:text-red-400 transition-colors"
+                        title="Delete Document"
+                    >
+                        <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                    </button>
+                </div>
+
+                <div class="space-y-1">
+                    <h4 id="viewer-source-title" class="text-xs font-bold text-white line-clamp-1">---</h4>
+                    <p id="viewer-page-indicator" class="text-[9px] text-zinc-550">Page - of -</p>
+                </div>
+
+                <!-- Slide text container -->
+                <div id="slide-text-box" class="p-3 rounded-lg border text-[11px] h-32 overflow-y-auto bg-zinc-950/80 border-zinc-900 text-zinc-300">
+                    <!-- Text loaded from active source slide -->
+                </div>
+
+                <!-- Control Buttons -->
+                <div class="flex items-center justify-between pt-1">
+                    <button
+                        id="prev-slide-btn"
+                        onclick="prevSlide()"
+                        class="p-1.5 rounded bg-zinc-900 border border-zinc-800 text-zinc-400 disabled:opacity-30 hover:bg-zinc-850 transition-colors"
+                    >
+                        <i data-lucide="chevron-left" class="w-3.5 h-3.5"></i>
+                    </button>
+
+                    <button
+                        onclick="queryActivePage()"
+                        class="px-2.5 py-1.5 bg-indigo-500/10 text-indigo-400 hover:bg-indigo-500/20 rounded text-[10px] font-bold transition-colors"
+                    >
+                        Query Page Context
+                    </button>
+
+                    <button
+                        id="next-slide-btn"
+                        onclick="nextSlide()"
+                        class="p-1.5 rounded bg-zinc-900 border border-zinc-800 text-zinc-400 disabled:opacity-30 hover:bg-zinc-850 transition-colors"
+                    >
+                        <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Panel: App Workspace -->
+        <div class="lg:col-span-9 space-y-6">
+            
+            <!-- Category Tabs selection bar -->
+            <div class="flex items-center justify-between border-b border-zinc-900/60 pb-3 overflow-x-auto scrollbar-none">
+                <div class="flex p-1 space-x-2 bg-zinc-900/40 rounded-xl border border-zinc-850">
+                    <button onclick="switchTab('chat')" id="tab-btn-chat" class="flex items-center space-x-1.5 px-3.5 py-2 rounded-lg text-[11px] font-bold transition-all bg-zinc-850 text-white">
+                        <i data-lucide="message-square" class="w-3.5 h-3.5"></i>
+                        <span>AI Chatbot</span>
+                    </button>
+                    <button onclick="switchTab('studio')" id="tab-btn-studio" class="flex items-center space-x-1.5 px-3.5 py-2 rounded-lg text-[11px] font-bold transition-all text-zinc-400 hover:text-zinc-200">
+                        <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
+                        <span>Study Studio</span>
+                    </button>
+                    <button onclick="switchTab('library')" id="tab-btn-library" class="flex items-center space-x-1.5 px-3.5 py-2 rounded-lg text-[11px] font-bold transition-all text-zinc-400 hover:text-zinc-200">
+                        <i data-lucide="book-marked" class="w-3.5 h-3.5"></i>
+                        <span>Saved Library</span>
+                        <span id="saved-badge" class="ml-1 text-[9px] px-1.5 rounded bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">0</span>
+                    </button>
+                    <button onclick="switchTab('flashcards')" id="tab-btn-flashcards" class="flex items-center space-x-1.5 px-3.5 py-2 rounded-lg text-[11px] font-bold transition-all text-zinc-400 hover:text-zinc-200">
+                        <i data-lucide="layers" class="w-3.5 h-3.5"></i>
+                        <span>Flashcards</span>
+                        <span id="flash-badge" class="ml-1 text-[9px] px-1.5 rounded bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 hidden">0</span>
+                    </button>
+                </div>
+
+                <span class="text-[10px] font-bold text-zinc-500 hidden md:block">
+                    Connected model: <b>Gemini 2.5 Flash</b>
+                </span>
+            </div>
+
+            <!-- Tab Content: Chat -->
+            <div id="tab-content-chat" class="p-4 md:p-6 rounded-xl border bg-zinc-900/25 border-zinc-850 space-y-4">
+                <div class="flex items-center justify-between border-b border-zinc-900/60 pb-3">
+                    <div class="flex items-center space-x-2">
+                        <div class="p-1.5 rounded-lg bg-indigo-500/10 text-indigo-400">
+                            <i data-lucide="message-square" class="w-4 h-4"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-xs font-bold text-white">Interact with Study Slides</h3>
+                            <p class="text-[9px] text-zinc-500">Ask general CS questions or focus specifically on your uploaded papers</p>
+                        </div>
+                    </div>
+                    <div class="text-[10px] px-2 py-0.5 rounded border border-zinc-850 text-zinc-500 font-semibold bg-zinc-950/40 hidden md:block">
+                        Slide context is loaded automatically on click
+                    </div>
+                </div>
+
+                <!-- Chat message streams -->
+                <div id="chat-messages-container" class="h-80 overflow-y-auto space-y-4 pr-1 scrollbar-none flex flex-col">
+                    <!-- Chat nodes inject here -->
+                </div>
+
+                <!-- Form -->
+                <form id="chat-form" class="flex items-center space-x-2" onsubmit="handleSendChatMessage(event)">
+                    <input
+                        type="text"
+                        id="chat-input"
+                        placeholder="Ask a question about the active slide, page, or document..."
+                        class="flex-1 p-3 rounded-lg text-xs border focus:outline-none focus:ring-1 focus:ring-indigo-500 bg-zinc-950 border-zinc-900 text-white placeholder-zinc-700"
+                    />
+                    <button
+                        type="submit"
+                        id="chat-submit-btn"
+                        class="p-3 bg-indigo-500 hover:bg-indigo-600 text-white rounded-lg transition-colors flex items-center justify-center"
+                    >
+                        <i data-lucide="send" class="w-4 h-4"></i>
+                    </button>
+                </form>
+            </div>
+
+            <!-- Tab Content: Study Studio -->
+            <div id="tab-content-studio" class="space-y-6 hidden">
+                <div class="p-5 rounded-xl border bg-zinc-900/25 border-zinc-850 space-y-4">
+                    <div class="flex items-center space-x-2">
+                        <div class="p-1.5 rounded-lg bg-zinc-900 text-indigo-400 border border-zinc-800">
+                            <i data-lucide="sliders" class="w-3.5 h-3.5"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-xs font-bold text-white">Synthesize Premium CS Masterclass Guides</h3>
+                            <p class="text-[10px] text-zinc-500">Compile multiple documents into beautifully structured technical review articles.</p>
+                        </div>
+                    </div>
+
+                    <div class="space-y-3">
+                        <textarea
+                            id="studio-prompt"
+                            rows="2"
+                            placeholder="Enter study directive..."
+                            class="w-full p-3 rounded-lg text-xs md:text-sm border focus:outline-none focus:ring-1 focus:ring-indigo-500 bg-zinc-950 border-zinc-900 text-zinc-100"
+                        >Synthesize a premium study article with key highlights on the selected materials...</textarea>
+                    </div>
+
+                    <div class="flex items-center justify-between border-t border-zinc-900/60 pt-3">
+                        <span class="text-[10px] text-zinc-500">
+                            Uses all checked inputs to synthesize deep explanations.
+                        </span>
+
+                        <button
+                            onclick="handleCompileArticle()"
+                            id="compile-btn"
+                            class="px-4 py-2 bg-indigo-500 hover:bg-indigo-600 text-white rounded-lg text-xs font-bold flex items-center space-x-1.5 transition-colors"
+                        >
+                            <i data-lucide="sparkles" class="w-3.5 h-3.5" id="compile-icon"></i>
+                            <span id="compile-btn-text">Compile Study Guide</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Article compiled workspace display -->
+                <div id="compiled-article-panel" class="p-6 rounded-xl border bg-zinc-900/25 border-zinc-850 space-y-4 hidden">
+                    <div class="flex items-center justify-between border-b border-zinc-900 pb-3">
+                        <div>
+                          <span class="text-[9px] uppercase font-bold text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded border border-indigo-500/20">Active Study Guide Draft</span>
+                          <h3 id="compiled-title" class="text-sm font-bold text-white mt-1">---</h3>
+                        </div>
+
+                        <div class="flex items-center space-x-2">
+                          <button
+                            onclick="copyActiveDraft()"
+                            class="px-2.5 py-1.5 rounded bg-zinc-900 border border-zinc-800 text-[10px] text-zinc-300 flex items-center space-x-1 hover:bg-zinc-850 transition-colors"
+                          >
+                            <i data-lucide="copy" class="w-3 h-3"></i>
+                            <span id="draft-copy-btn-text">Copy</span>
+                          </button>
+
+                          <button
+                            onclick="saveActiveDraft()"
+                            class="px-3 py-1.5 bg-indigo-500 hover:bg-indigo-600 text-white rounded text-[10px] font-bold flex items-center space-x-1 transition-colors"
+                          >
+                            <i data-lucide="save" class="w-3 h-3"></i>
+                            <span>Save Vault</span>
+                          </button>
+                        </div>
+                    </div>
+
+                    <div id="compiled-body" class="prose prose-invert max-w-none text-xs md:text-sm">
+                        <!-- Dynamic Markdown elements injected here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab Content: Saved Library -->
+            <div id="tab-content-library" class="space-y-4 hidden">
+                <div id="library-empty-state" class="p-12 text-center rounded-xl border bg-zinc-900/10 border-zinc-850 hidden">
+                    <i data-lucide="book-marked" class="w-8 h-8 text-zinc-650 mx-auto mb-2"></i>
+                    <h4 class="text-xs font-bold text-white">Your library vault is empty</h4>
+                    <p class="text-[10px] text-zinc-500 mt-1">Go to Study Studio to compile and save your research papers.</p>
+                </div>
+                
+                <div id="library-articles-container" class="space-y-4">
+                    <!-- Saved articles rendered here -->
+                </div>
+            </div>
+
+            <!-- Tab Content: Flashcards -->
+            <div id="tab-content-flashcards" class="max-w-xl mx-auto space-y-6 hidden">
+                <div id="flashcards-empty-state" class="p-12 text-center rounded-xl border bg-zinc-900/10 border-zinc-850 hidden">
+                    <i data-lucide="layers" class="w-8 h-8 text-zinc-650 mx-auto mb-2"></i>
+                    <h4 class="text-xs font-bold text-white">No active card set</h4>
+                    <p class="text-[10px] text-zinc-500">Flashcards are parsed automatically whenever you compile a Study Guide article.</p>
+                </div>
+
+                <div id="flashcards-active-view" class="space-y-4">
+                    <div class="flex items-center justify-between text-[10px] text-zinc-500 font-bold">
+                        <span>Active Session</span>
+                        <span id="flashcard-position-indicator">Card - of -</span>
+                    </div>
+
+                    <!-- 3D Card box container -->
+                    <div onclick="flipFlashcard()" class="perspective-1000 cursor-pointer h-56 w-full select-none">
+                        <div id="flashcard-rotator" class="relative w-full h-full duration-300 preserve-3d transition-transform">
+                            
+                            <!-- Card Face Front -->
+                            <div class="absolute w-full h-full backface-hidden rounded-xl border p-6 flex flex-col justify-between bg-zinc-900/90 border-zinc-850">
+                                <span class="text-[9px] uppercase tracking-widest bg-indigo-500/10 text-indigo-400 px-2 py-0.5 rounded self-start font-bold">Question / concept</span>
+                                <div class="text-center py-2">
+                                  <h4 id="flashcard-front-text" class="text-sm font-bold text-white">---</h4>
+                                </div>
+                                <span class="text-[9px] text-zinc-550 text-center">Click card to reveal mechanics</span>
+                            </div>
+
+                            <!-- Card Face Back -->
+                            <div class="absolute w-full h-full backface-hidden rotate-y-180 rounded-xl border p-6 flex flex-col justify-between bg-zinc-950 border-indigo-500/20">
+                                <span class="text-[9px] uppercase tracking-widest bg-emerald-500/10 text-emerald-450 px-2 py-0.5 rounded self-start font-bold">Technical explanation</span>
+                                <div class="text-center py-2">
+                                  <p id="flashcard-back-text" class="text-xs text-zinc-300 leading-relaxed font-semibold">---</p>
+                                </div>
+                                <span class="text-[9px] text-zinc-550 text-center">Click card to flip back</span>
+                            </div>
+
+                        </div>
+                    </div>
+
+                    <!-- Flashcards controls -->
+                    <div class="flex items-center justify-between">
+                        <button
+                            onclick="prevFlashcard()"
+                            class="px-3 py-1.5 bg-zinc-900 border border-zinc-800 text-zinc-300 rounded text-xs hover:bg-zinc-850 transition-colors"
+                        >
+                          Previous
+                        </button>
+
+                        <button
+                            onclick="flipFlashcard()"
+                            class="px-4 py-2 bg-indigo-500 text-white rounded-lg text-xs font-bold hover:bg-indigo-600 transition-colors"
+                        >
+                          Flip Card
+                        </button>
+
+                        <button
+                            onclick="nextFlashcard()"
+                            class="px-3 py-1.5 bg-zinc-900 border border-zinc-800 text-zinc-300 rounded text-xs hover:bg-zinc-850 transition-colors"
+                        >
+                          Next
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Source Modal -->
+    <div id="add-source-modal" class="fixed inset-0 z-50 items-center justify-center p-4 bg-black/70 backdrop-blur-xs hidden flex">
+        <div class="w-full max-w-lg p-5 rounded-xl border shadow-2xl bg-[#0c0c0e] border-zinc-850">
+            <div class="flex items-center justify-between mb-4 border-b border-zinc-900 pb-2">
+                <div class="flex space-x-3">
+                    <button
+                        onclick="switchModalTab('text')"
+                        id="modal-tab-text-btn"
+                        class="text-xs font-bold pb-1 border-b-2 border-indigo-500 text-indigo-400"
+                    >
+                      Write Plain Material
+                    </button>
+                    <button
+                        onclick="switchModalTab('pdf')"
+                        id="modal-tab-pdf-btn"
+                        class="text-xs font-bold pb-1 border-b-2 border-transparent text-zinc-500"
+                    >
+                      Upload Study PDF
+                    </button>
+                </div>
+
+                <button
+                    onclick="closeAddSourceModal()"
+                    class="text-zinc-550 hover:text-zinc-300 text-xs font-bold"
+                >
+                  Close
+                </button>
+            </div>
+
+            <!-- PDF upload workspace section -->
+            <div id="modal-tab-pdf" class="space-y-4 py-3 hidden">
+                <div id="pdf-upload-dropzone" class="border-2 border-dashed rounded-xl p-8 text-center border-zinc-800 bg-zinc-950/40">
+                    <div id="pdf-loading-indicator" class="hidden flex flex-col items-center justify-center space-y-2">
+                        <div class="w-6 h-6 border-2 border-indigo-500/20 border-t-indigo-500 rounded-full animate-spin"></div>
+                        <p class="text-xs text-indigo-400">Extracting slide paragraphs...</p>
+                    </div>
+
+                    <label id="pdf-upload-label" class="cursor-pointer flex flex-col items-center justify-center space-y-2">
+                        <div class="p-3 bg-zinc-900 border border-zinc-800 rounded-lg text-indigo-400">
+                            <i data-lucide="upload-cloud" class="w-5 h-5"></i>
+                        </div>
+                        <p class="text-xs font-bold text-zinc-300">Choose Research Paper PDF</p>
+                        <p class="text-[10px] text-zinc-500">Processed completely inside browser</p>
+                        <input 
+                            type="file" 
+                            accept="application/pdf" 
+                            onchange="handlePdfUpload(event)" 
+                            class="hidden" 
+                        />
+                    </label>
+                </div>
+            </div>
+
+            <!-- Text entry form workspace section -->
+            <div id="modal-tab-text" class="space-y-4">
+                <form onsubmit="handleAddSource(event)" class="space-y-4">
+                    <div class="space-y-1">
+                        <label class="text-[10px] font-bold uppercase text-zinc-550">Document Title</label>
+                        <input
+                            type="text"
+                            id="new-source-title"
+                            required
+                            placeholder="E.g., MapReduce Architecture, B-Trees..."
+                            class="w-full p-2.5 rounded bg-zinc-950 text-xs border border-zinc-900 text-white focus:outline-none focus:border-indigo-500"
+                        />
+                    </div>
+
+                    <div class="space-y-1">
+                        <label class="text-[10px] font-bold uppercase text-zinc-550">Category Area</label>
+                        <select
+                            id="new-source-category"
+                            class="w-full p-2.5 rounded bg-zinc-950 text-xs border border-zinc-900 text-white focus:outline-none focus:border-indigo-500"
+                        >
+                            <option value="Distributed Systems">Distributed Systems</option>
+                            <option value="Algorithms">Algorithms</option>
+                            <option value="System Design">System Design</option>
+                            <option value="General CS">General CS</option>
+                        </select>
+                    </div>
+
+                    <div class="space-y-1">
+                        <label class="text-[10px] font-bold uppercase text-zinc-550">Slide Content (Plain or with '[Slide 1: ...]' labels)</label>
+                        <textarea
+                            id="new-source-content"
+                            required
+                            placeholder="Enter document slides..."
+                            rows="4"
+                            class="w-full p-2.5 rounded bg-zinc-950 text-xs border border-zinc-900 text-white focus:outline-none focus:border-indigo-500"
+                        ></textarea>
+                    </div>
+
+                    <button
+                        type="submit"
+                        class="w-full py-2.5 bg-indigo-500 hover:bg-indigo-600 text-white text-xs font-bold rounded-lg transition-colors"
+                    >
+                      Save into CS Notebook
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <footer class="py-8 text-center text-[10px] text-zinc-550 border-t border-zinc-950 mt-12">
+        <p>CS Office Notebook. Tailored premium iOS interactive interface. All files cached locally.</p>
+    </footer>
+
+    <!-- App Scripts logic -->
+    <script>
+        // Preset default database mock files
+        const PRELOADED_SOURCES = [
+          {
+            id: 'source-1',
+            title: 'CAP Theorem Deep Dive',
+            category: 'Distributed Systems',
+            content: `[Slide 1: Introduction to CAP]
+The CAP theorem, also named Brewer's theorem, states that a distributed data store can simultaneously provide at most two of three guarantees: Consistency, Availability, and Partition Tolerance.
+
+[Slide 2: Consistency (C)]
+Consistency means every read receives the most recent write or an error. When consistency is prioritized, stale data is never allowed, even if it means blocking operations during network lag.
+
+[Slide 3: Availability (A)]
+Availability guarantees that every non-error request receives a response, without the guarantee that it contains the most recent write. It's about system uptime and constant responsiveness.
+
+[Slide 4: Partition Tolerance (P)]
+Partition Tolerance means the system continues to operate despite an arbitrary number of messages being dropped or delayed by the network between nodes. Network partitions are mathematically inevitable in distributed systems.
+
+[Slide 5: Distributed Tradeoffs]
+In a real-world network partition, you must choose either:
+- CP: Consistent & Partition Tolerant (e.g., HBase, MongoDB).
+- AP: Available & Partition Tolerant (e.g., Cassandra, DynamoDB).`,
+            updatedAt: 'Just now'
+          },
+          {
+            id: 'source-2',
+            title: 'Dijkstra\'s Algorithm Mechanics',
+            category: 'Algorithms',
+            content: `[Slide 1: Core Objective]
+Dijkstra's algorithm finds the shortest path from a single source node to all other nodes in a weighted, non-negative directed graph.
+
+[Slide 2: Priority Queue Mechanics]
+The algorithm maintains a set of unvisited nodes and calculates tentative distances. Using a Min-Heap / Priority Queue yields O((V+E) log V) efficiency.
+
+[Slide 3: Relaxation Step]
+For the current node, calculate the distance to all unvisited neighbors. If (distance to node + edge weight) is less than the neighbor's current recorded distance, update the neighbor's distance.`,
+            updatedAt: '2 hours ago'
+          }
+        ];
+
+        // State variables
+        let sources = [];
+        let selectedSources = ['source-1'];
+        let activeTab = 'chat';
+        let apiKey = '';
+        let modalTab = 'text';
+        let isDarkMode = true;
+        
+        // Viewer specific state
+        let viewingSource = null;
+        let activeSlideIndex = 0;
+        let activeSlides = [];
+
+        // Chat stream state
+        let chatMessages = [];
+        let isChatLoading = false;
+
+        // Compiled Masterclass drafts state
+        let currentArticle = {
+            title: '',
+            content: '',
+            prompt: 'Synthesize a premium study article with key highlights on the selected materials...'
+        };
+        let savedArticles = [];
+
+        // Flashcards state
+        let flashcards = [];
+        let activeCardIndex = 0;
+        let isCardFlipped = false;
+
+        // On Load initialization
+        window.addEventListener('DOMContentLoaded', () => {
+            // Load state from local storage or set defaults
+            const savedSources = localStorage.getItem('csoffice_sources');
+            sources = savedSources ? JSON.parse(savedSources) : PRELOADED_SOURCES;
+
+            const savedKey = localStorage.getItem('csoffice_gemini_key');
+            if (savedKey) {
+                apiKey = savedKey;
+                document.getElementById('api-key-input').value = apiKey;
+            }
+
+            const savedDrafts = localStorage.getItem('csoffice_articles');
+            savedArticles = savedDrafts ? JSON.parse(savedDrafts) : [];
+
+            // Set default active viewer source
+            if (sources.length > 0) {
+                viewingSource = sources[0];
+                loadViewerSource(viewingSource);
+            }
+
+            // Init Chat history
+            chatMessages = [
+                { role: 'assistant', text: "Hello! I am your CS Office Assistant. Upload your research papers, notes, or PDFs. Select them on the left, click into any slide, and we can discuss them together!" }
+            ];
+
+            // Render views
+            renderSourcesList();
+            renderChat();
+            renderSavedArticles();
+            updateSelectedBadge();
+            updateTabUI();
+            updateThemeUI();
+
+            // Refresh Lucide icons
+            lucide.createIcons();
+        });
+
+        // Toast messaging system
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = "flex items-center space-x-2 px-4 py-2.5 rounded-xl border shadow-xl bg-zinc-900 border-zinc-800 text-zinc-200 transition-all transform translate-y-2 opacity-0 duration-300";
+            
+            let colorClass = "text-emerald-400";
+            if (type === 'error') colorClass = "text-rose-400";
+            if (type === 'info') colorClass = "text-indigo-400";
+
+            toast.innerHTML = `
+                <i data-lucide="info" class="w-4 h-4 ${colorClass}"></i>
+                <span class="text-xs font-semibold">${message}</span>
+            `;
+            
+            container.appendChild(toast);
+            lucide.createIcons();
+            
+            // Trigger animation frame
+            setTimeout(() => {
+                toast.classList.remove('translate-y-2', 'opacity-0');
+            }, 10);
+
+            // Clear toast
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-y-[-4px]');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        // Dark/Light toggle
+        function toggleDarkMode() {
+            isDarkMode = !isDarkMode;
+            updateThemeUI();
+        }
+
+        function updateThemeUI() {
+            const body = document.body;
+            const header = document.getElementById('main-header');
+            const themeToggleBtn = document.getElementById('theme-toggle');
+            
+            if (isDarkMode) {
+                document.documentElement.classList.add('dark');
+                body.className = "min-h-screen bg-zinc-950 text-zinc-100 transition-colors duration-300 antialiased selection:bg-indigo-500/30 selection:text-indigo-200";
+                header.className = "sticky top-0 z-30 backdrop-blur-md border-b bg-zinc-950/80 border-zinc-900 px-6 py-4 transition-colors duration-300";
+                themeToggleBtn.innerHTML = `<i data-lucide="sun" class="w-3.5 h-3.5"></i>`;
+                themeToggleBtn.className = "p-2 rounded-xl border bg-zinc-900/60 border-zinc-800 text-yellow-400 hover:bg-zinc-900 transition-all";
+            } else {
+                document.documentElement.classList.remove('dark');
+                body.className = "min-h-screen bg-[#f4f4f5] text-zinc-800 transition-colors duration-300 antialiased selection:bg-indigo-500/10 selection:text-indigo-900";
+                header.className = "sticky top-0 z-30 backdrop-blur-md border-b bg-white/80 border-zinc-200 px-6 py-4 transition-colors duration-300";
+                themeToggleBtn.innerHTML = `<i data-lucide="moon" class="w-3.5 h-3.5"></i>`;
+                themeToggleBtn.className = "p-2 rounded-xl border bg-white border-zinc-250 text-zinc-600 hover:bg-zinc-50 transition-all";
+            }
+            updateKeyBadgeUI();
+            renderSourcesList();
+            renderChat();
+            renderSavedArticles();
+            lucide.createIcons();
+        }
+
+        // Setup API key settings
+        function toggleKeyInput() {
+            const panel = document.getElementById('key-input-panel');
+            panel.classList.toggle('hidden');
+        }
+
+        function saveApiKey() {
+            const val = document.getElementById('api-key-input').value.trim();
+            apiKey = val;
+            localStorage.setItem('csoffice_gemini_key', apiKey);
+            showToast("API Key updated!", "success");
+            updateKeyBadgeUI();
+            document.getElementById('key-input-panel').classList.add('hidden');
+        }
+
+        function updateKeyBadgeUI() {
+            const badge = document.getElementById('key-badge');
+            const text = document.getElementById('key-badge-text');
+            if (apiKey) {
+                badge.className = "flex items-center space-x-1.5 px-3 py-1.5 rounded-full text-[10px] font-bold border transition-all bg-emerald-500/10 border-emerald-500/30 text-emerald-400";
+                text.innerText = "Gemini 2.5 Active";
+            } else {
+                badge.className = "flex items-center space-x-1.5 px-3 py-1.5 rounded-full text-[10px] font-bold border transition-all bg-zinc-900 border-zinc-800 text-zinc-400 hover:text-zinc-250";
+                text.innerText = "Configure Gemini API";
+            }
+        }
+
+        // Split text or slide elements safely
+        function getSlides(source) {
+            if (!source || !source.content) return ["Empty slide"];
+            const slides = source.content.split(/\[Slide \d+:/i).map(s => s.trim()).filter(Boolean);
+            if (slides.length <= 1) {
+                return source.content.split(/\n\n+/).map(p => p.trim()).filter(Boolean);
+            }
+            return source.content.split(/(\[Slide \d+:[^\]]+\])/i)
+              .reduce((acc, part, i, arr) => {
+                if (part.startsWith('[Slide') && arr[i+1]) {
+                  acc.push(part + "\n" + arr[i+1]);
+                }
+                return acc;
+              }, []);
+        }
+
+        // Render documents in the left sidebar
+        function renderSourcesList() {
+            const container = document.getElementById('sources-list');
+            container.innerHTML = '';
+
+            sources.forEach(src => {
+                const isSelected = selectedSources.includes(src.id);
+                const isViewing = viewingSource && viewingSource.id === src.id;
+
+                let cardClass = isViewing 
+                    ? "border-indigo-500 bg-indigo-500/10" 
+                    : isDarkMode ? "bg-zinc-950/40 border-zinc-900 hover:border-zinc-850" : "bg-zinc-50 border-zinc-200 hover:bg-zinc-100/50";
+
+                const wrapper = document.createElement('div');
+                wrapper.className = `p-3 rounded-lg border cursor-pointer transition-all ${cardClass}`;
+                wrapper.onclick = () => {
+                    viewingSource = src;
+                    loadViewerSource(src);
+                };
+
+                wrapper.innerHTML = `
+                    <div class="flex items-start justify-between">
+                      <div class="space-y-1">
+                        <div class="flex items-center space-x-1.5">
+                          <i data-lucide="file-text" class="w-3.5 h-3.5 text-indigo-400"></i>
+                          <h4 class="text-xs font-bold tracking-tight ${isDarkMode ? 'text-zinc-50' : 'text-zinc-900'} line-clamp-1">${src.title}</h4>
+                        </div>
+                        <span class="text-[9px] uppercase font-semibold text-zinc-500">${src.category}</span>
+                      </div>
+
+                      <div class="flex items-center space-x-2">
+                        <button
+                          onclick="event.stopPropagation(); toggleSourceSelection('${src.id}')"
+                          class="w-4 h-4 rounded flex items-center justify-center border transition-all ${
+                            isSelected ? 'bg-indigo-500 border-indigo-500 text-white' : 'border-zinc-800 text-transparent'
+                          }"
+                        >
+                          <i data-lucide="check" class="w-2.5 h-2.5 ${isSelected ? 'block' : 'hidden'}"></i>
+                        </button>
+                      </div>
+                    </div>
+                `;
+                container.appendChild(wrapper);
+            });
+            lucide.createIcons();
+        }
+
+        function toggleSourceSelection(id) {
+            const index = selectedSources.indexOf(id);
+            if (index > -1) {
+                selectedSources.splice(index, 1);
+            } else {
+                selectedSources.push(id);
+            }
+            updateSelectedBadge();
+            renderSourcesList();
+        }
+
+        function updateSelectedBadge() {
+            document.getElementById('selected-count-badge').innerText = `${selectedSources.length} Selected`;
+        }
+
+        // Active document slide viewer
+        function loadViewerSource(src) {
+            if (!src) {
+                document.getElementById('viewer-container').classList.add('hidden');
+                return;
+            }
+            document.getElementById('viewer-container').classList.remove('hidden');
+            activeSlides = getSlides(src);
+            activeSlideIndex = 0;
+            updateViewerUI();
+        }
+
+        function updateViewerUI() {
+            document.getElementById('viewer-source-title').innerText = viewingSource.title;
+            document.getElementById('viewer-page-indicator').innerText = `Page ${activeSlideIndex + 1} of ${activeSlides.length}`;
+            document.getElementById('slide-text-box').innerText = activeSlides[activeSlideIndex] || "Empty page";
+
+            // Disable buttons if bounds reached
+            document.getElementById('prev-slide-btn').disabled = (activeSlideIndex === 0);
+            document.getElementById('next-slide-btn').disabled = (activeSlideIndex === activeSlides.length - 1);
+        }
+
+        function prevSlide() {
+            if (activeSlideIndex > 0) {
+                activeSlideIndex--;
+                updateViewerUI();
+            }
+        }
+
+        function nextSlide() {
+            if (activeSlideIndex < activeSlides.length - 1) {
+                activeSlideIndex++;
+                updateViewerUI();
+            }
+        }
+
+        function deleteCurrentSource() {
+            if (!viewingSource) return;
+            const id = viewingSource.id;
+            const title = viewingSource.title;
+            sources = sources.filter(s => s.id !== id);
+            selectedSources = selectedSources.filter(sid => sid !== id);
+            localStorage.setItem('csoffice_sources', JSON.stringify(sources));
+            
+            if (sources.length > 0) {
+                viewingSource = sources[0];
+                loadViewerSource(viewingSource);
+            } else {
+                viewingSource = null;
+                loadViewerSource(null);
+            }
+            renderSourcesList();
+            updateSelectedBadge();
+            showToast(`Deleted "${title}"`, "info");
+        }
+
+        function queryActivePage() {
+            const slideText = activeSlides[activeSlideIndex] || "";
+            document.getElementById('chat-input').value = `Can you explain or summarize what this slide/page means?\n\n"${slideText.substring(0, 150)}..."`;
+            switchTab('chat');
+            showToast("Slide context prepared for query!", "info");
+        }
+
+        // Tab routing switcher
+        function switchTab(tabId) {
+            activeTab = tabId;
+            updateTabUI();
+        }
+
+        function updateTabUI() {
+            // Hide all tab containers
+            document.getElementById('tab-content-chat').classList.add('hidden');
+            document.getElementById('tab-content-studio').classList.add('hidden');
+            document.getElementById('tab-content-library').classList.add('hidden');
+            document.getElementById('tab-content-flashcards').classList.add('hidden');
+
+            // Deactivate all tab buttons
+            ['chat', 'studio', 'library', 'flashcards'].forEach(id => {
+                const btn = document.getElementById(`tab-btn-${id}`);
+                btn.className = "flex items-center space-x-1.5 px-3.5 py-2 rounded-lg text-[11px] font-bold transition-all text-zinc-400 hover:text-zinc-200";
+            });
+
+            // Show and select current tab
+            document.getElementById(`tab-content-${activeTab}`).classList.remove('hidden');
+            document.getElementById(`tab-btn-${activeTab}`).className = "flex items-center space-x-1.5 px-3.5 py-2 rounded-lg text-[11px] font-bold transition-all bg-zinc-850 text-white shadow";
+
+            if (activeTab === 'library') {
+                renderSavedArticles();
+            }
+            if (activeTab === 'flashcards') {
+                renderFlashcardsUI();
+            }
+        }
+
+        // Simple Markdown renderer helper (vanilla JS version)
+        function renderMarkdown(text) {
+            if (!text) return '';
+            return text.split('\n').map(line => {
+                if (line.startsWith('### ')) {
+                    return `<h3 class="text-base font-bold ${isDarkMode ? 'text-white' : 'text-zinc-900'} mt-4 mb-2">${line.replace('### ', '')}</h3>`;
+                }
+                if (line.startsWith('- ')) {
+                    return `<li class="ml-4 list-disc ${isDarkMode ? 'text-zinc-300' : 'text-zinc-700'} my-1 text-xs md:text-sm">${line.replace('- ', '')}</li>`;
+                }
+                // Handle bolding formatting inside paragraphs
+                let formatted = line;
+                const boldRegex = /\*\*(.*?)\*\*/g;
+                formatted = formatted.replace(boldRegex, '<b class="text-indigo-400 font-semibold">$1</b>');
+                
+                return `<p class="text-xs md:text-sm ${isDarkMode ? 'text-zinc-300' : 'text-zinc-700'} leading-relaxed my-1.5">${formatted}</p>`;
+            }).join('');
+        }
+
+        // Direct Gemini API Request implementation (Gemini 2.5 Flash)
+        async function callGeminiAPI(promptText) {
+            if (!apiKey) {
+                // High-quality local simulator fallbacks when key is pending
+                return new Promise((resolve) => {
+                    setTimeout(() => {
+                        resolve(`### Gemini 2.5 Flash (Simulator Active)\n\nI successfully processed your request. Here are the core insights from the selected documents:\n- **Main Topic Mechanics:** This analysis targets the conceptual design specifications of your computer science research material.\n- **Distributed Reliability:** In high scale systems, partitions require trade-offs. Priority algorithms determine optimal pathways step-by-step.\n\n**To extract actual Live answers, set your Gemini API key in the top configurations panel!**\n\n### Study Vocabulary Key terms:\n- **Distributed Partition**: When messages are dropped or delayed by the network between nodes.\n- **Relational Relaxation**: Step of calculating paths to unvisited nodes and updating recorded distance values.`);
+                    }, 1200);
+                });
+            }
+
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+            const payload = {
+                contents: [{ parts: [{ text: promptText }] }],
+                systemInstruction: {
+                    parts: [{ text: "You are CS Office AI. Keep responses highly technical, concise, with clean markdown formatting. Use headers (###), bullet points, and clean bold terms." }]
+                }
+            };
+
+            const response = await fetch(apiUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            if (!response.ok) {
+                throw new Error(`Gemini API Request Failed. Status: ${response.status}`);
+            }
+
+            const result = await response.json();
+            return result.candidates?.[0]?.content?.parts?.[0]?.text || "Unable to parse response body from API candidates.";
+        }
+
+        // 1. CHATBOT PANEL BUSINESS LOGIC
+        function renderChat() {
+            const container = document.getElementById('chat-messages-container');
+            container.innerHTML = '';
+
+            chatMessages.forEach(msg => {
+                const isBot = msg.role === 'assistant';
+                const wrapper = document.createElement('div');
+                wrapper.className = `flex ${isBot ? 'justify-start' : 'justify-end'} mb-4`;
+
+                const box = document.createElement('div');
+                box.className = `max-w-[85%] rounded-xl p-3 text-xs border ${
+                  isBot 
+                    ? isDarkMode ? 'bg-zinc-900/40 border-zinc-900 text-zinc-300' : 'bg-zinc-100 border-zinc-200 text-zinc-700'
+                    : 'bg-indigo-600 border-indigo-500 text-white'
+                }`;
+
+                if (isBot) {
+                    box.innerHTML = `<div class="prose max-w-none text-xs leading-relaxed">${renderMarkdown(msg.text)}</div>`;
+                } else {
+                    box.innerText = msg.text;
+                }
+
+                wrapper.appendChild(box);
+                container.appendChild(wrapper);
+            });
+
+            // Auto Scroll Bottom
+            container.scrollTop = container.scrollHeight;
+        }
+
+        async function handleSendChatMessage(e) {
+            if (e) e.preventDefault();
+            const input = document.getElementById('chat-input');
+            const userMsg = input.value.trim();
+            if (!userMsg || isChatLoading) return;
+
+            chatMessages.push({ role: 'user', text: userMsg });
+            input.value = '';
+            isChatLoading = true;
+            renderChat();
+
+            // Construct selected sources context
+            const selectedDocs = sources.filter(s => selectedSources.includes(s.id));
+            const contextText = selectedDocs.map(doc => `[Source: ${doc.title}]\n${doc.content}`).join('\n\n');
+            const activeSlideText = activeSlides[activeSlideIndex] || "";
+
+            const fullPrompt = `
+You are the interactive CS Office Assistant.
+Currently selected sources in this workspace:
+${contextText}
+
+Active Slide/Page being viewed by user:
+"${activeSlideText}"
+
+User Question: "${userMsg}"
+Using the above materials, answer the user's question clearly.
+            `;
+
+            // Insert placeholder loader node
+            const loaderId = 'chat-loading-indicator';
+            const container = document.getElementById('chat-messages-container');
+            const loader = document.createElement('div');
+            loader.id = loaderId;
+            loader.className = "flex justify-start mb-4";
+            loader.innerHTML = `
+                <div class="rounded-xl p-3 bg-zinc-900/20 border border-zinc-900 flex items-center space-x-2">
+                  <div class="w-2 h-2 rounded-full bg-indigo-500 animate-bounce" style="animation-delay: 0ms"></div>
+                  <div class="w-2 h-2 rounded-full bg-indigo-500 animate-bounce" style="animation-delay: 150ms"></div>
+                  <div class="w-2 h-2 rounded-full bg-indigo-500 animate-bounce" style="animation-delay: 300ms"></div>
+                </div>
+            `;
+            container.appendChild(loader);
+            container.scrollTop = container.scrollHeight;
+
+            try {
+                const response = await callGeminiAPI(fullPrompt);
+                document.getElementById(loaderId).remove();
+                chatMessages.push({ role: 'assistant', text: response });
+            } catch (err) {
+                document.getElementById(loaderId).remove();
+                chatMessages.push({ role: 'assistant', text: `Failed to fetch response: ${err.message}` });
+            } finally {
+                isChatLoading = false;
+                renderChat();
+            }
+        }
+
+        // 2. STUDY STUDIO ARTICLE DESIGN LOGIC
+        async function handleCompileArticle() {
+            if (selectedSources.length === 0) {
+                showToast("Please select at least one source document in the sidebar.", "error");
+                return;
+            }
+
+            const promptVal = document.getElementById('studio-prompt').value.trim();
+            const compileBtn = document.getElementById('compile-btn');
+            const compileBtnText = document.getElementById('compile-btn-text');
+            const compileIcon = document.getElementById('compile-icon');
+
+            // Set loading state UI
+            compileBtn.disabled = true;
+            compileBtnText.innerText = "Compiling Masterclass...";
+            compileIcon.className = "w-3 h-3 border-2 border-white/20 border-t-white rounded-full animate-spin";
+
+            const selectedDocs = sources.filter(s => selectedSources.includes(s.id));
+            const contextPrompt = selectedDocs.map((doc, idx) => `[Source ${idx + 1} - ${doc.title}]:\n${doc.content}`).join('\n\n');
+
+            const promptText = `
+You are the expert technical writer for CS Office Notebook.
+Prompt Directive: ${promptVal}
+
+Source Material Context:
+${contextPrompt}
+
+Compile a comprehensive, gorgeous technical article. Include headings (###), clear definitions, bold key elements, and conclude with a quick terminology glossary formatted as "**Term**: Explanation" so we can parse them into study flashcards automatically.
+            `;
+
+            try {
+                const responseText = await callGeminiAPI(promptText);
+                
+                // Parse dynamic title
+                const lines = responseText.split('\n');
+                let finalTitle = `Masterclass: ${selectedDocs[0].title}`;
+                if (lines[0] && lines[0].startsWith('###')) {
+                    finalTitle = lines[0].replace(/###/g, '').trim();
+                }
+
+                currentArticle = {
+                    title: finalTitle,
+                    content: responseText,
+                    prompt: promptVal
+                };
+
+                // Show panels
+                document.getElementById('compiled-article-panel').classList.remove('hidden');
+                document.getElementById('compiled-title').innerText = currentArticle.title;
+                document.getElementById('compiled-body').innerHTML = renderMarkdown(currentArticle.content);
+
+                // Auto parse any key terms into card decks
+                generateFlashcardsFromText(responseText);
+                showToast("Premium study guide compiled!", "success");
+
+            } catch (err) {
+                showToast(`Compilation failed: ${err.message}`, "error");
+            } finally {
+                compileBtn.disabled = false;
+                compileBtnText.innerText = "Compile Study Guide";
+                compileIcon.className = "w-3.5 h-3.5";
+                lucide.createIcons();
+            }
+        }
+
+        function copyActiveDraft() {
+            if (!currentArticle.content) return;
+            navigator.clipboard.writeText(currentArticle.content);
+            const copyText = document.getElementById('draft-copy-btn-text');
+            copyText.innerText = "Copied!";
+            setTimeout(() => {
+                copyText.innerText = "Copy";
+            }, 2000);
+            showToast("Copied to clipboard!", "success");
+        }
+
+        function saveActiveDraft() {
+            if (!currentArticle.content) return;
+
+            const selectedDocs = sources.filter(s => selectedSources.includes(s.id));
+            const newSaved = {
+                id: `article-${Date.now()}`,
+                title: currentArticle.title || 'Untitled Masterclass',
+                prompt: currentArticle.prompt,
+                content: currentArticle.content,
+                sourcesUsed: selectedDocs.map(s => s.title),
+                createdAt: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+            };
+
+            savedArticles.unshift(newSaved);
+            localStorage.setItem('csoffice_articles', JSON.stringify(savedArticles));
+            
+            showToast("Saved to Library Vault!", "success");
+            switchTab('library');
+        }
+
+        // 3. SAVED LIBRARY LOGIC
+        function renderSavedArticles() {
+            const container = document.getElementById('library-articles-container');
+            const emptyState = document.getElementById('library-empty-state');
+            const badge = document.getElementById('saved-badge');
+            
+            badge.innerText = savedArticles.length;
+            container.innerHTML = '';
+
+            if (savedArticles.length === 0) {
+                emptyState.classList.remove('hidden');
+                return;
+            }
+            emptyState.classList.add('hidden');
+
+            savedArticles.forEach(art => {
+                const node = document.createElement('div');
+                node.className = `p-5 rounded-xl border ${isDarkMode ? 'bg-[#0b0b0d] border-zinc-850' : 'bg-white border-zinc-200'} space-y-3 mb-4`;
+                node.innerHTML = `
+                    <div class="flex items-center justify-between border-b border-zinc-900/60 pb-3">
+                        <div>
+                          <h4 class="text-xs font-bold ${isDarkMode ? 'text-zinc-100' : 'text-zinc-900'}">${art.title}</h4>
+                          <span class="text-[9px] text-zinc-550">Saved ${art.createdAt}</span>
+                        </div>
+
+                        <div class="flex items-center space-x-2">
+                          <button
+                            onclick="copyTextToClipboard('${art.id}')"
+                            class="p-1.5 rounded bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-zinc-200 transition-colors"
+                            title="Copy to Clipboard"
+                          >
+                            <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+                          </button>
+
+                          <button
+                            onclick="practiceSavedCards('${art.id}')"
+                            class="px-2 py-1 bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 text-[10px] font-bold rounded hover:bg-indigo-500/20 transition-all"
+                          >
+                            Practice Cards
+                          </button>
+
+                          <button
+                            onclick="deleteSavedArticle('${art.id}')"
+                            class="p-1.5 text-zinc-550 hover:text-red-400 transition-colors"
+                          >
+                            <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                          </button>
+                        </div>
+                    </div>
+
+                    <div class="prose prose-invert max-w-none text-xs">
+                        ${renderMarkdown(art.content)}
+                    </div>
+                `;
+                container.appendChild(node);
+            });
+            lucide.createIcons();
+        }
+
+        function copyTextToClipboard(id) {
+            const art = savedArticles.find(a => a.id === id);
+            if (art) {
+                navigator.clipboard.writeText(art.content);
+                showToast("Copied to clipboard!", "success");
+            }
+        }
+
+        function deleteSavedArticle(id) {
+            savedArticles = savedArticles.filter(a => a.id !== id);
+            localStorage.setItem('csoffice_articles', JSON.stringify(savedArticles));
+            renderSavedArticles();
+            showToast("Deleted masterclass", "info");
+        }
+
+        function practiceSavedCards(id) {
+            const art = savedArticles.find(a => a.id === id);
+            if (art) {
+                generateFlashcardsFromText(art.content);
+                switchTab('flashcards');
+                showToast("Flashcard set parsed from library document!", "success");
+            }
+        }
+
+        // 4. FLASHCARDS SYSTEM LOGIC
+        function generateFlashcardsFromText(text) {
+            const cards = [];
+            const lines = text.split('\n');
+            
+            lines.forEach(line => {
+                if (line.includes('**') && line.includes(':')) {
+                    const parts = line.split(':');
+                    const term = parts[0].replace(/\*\*|-/g, '').trim();
+                    const definition = parts[1].trim();
+                    if (term.length > 2 && definition.length > 5 && cards.length < 6) {
+                        cards.push({ front: term, back: definition });
+                    }
+                }
+            });
+
+            // Default fallback deck if no glossary items found
+            if (cards.length === 0) {
+                cards.push({ front: "CAP Consistency", back: "All readers see same data at same time." });
+                cards.push({ front: "Dijkstra Limit", back: "Cannot safely compute negative edge weights." });
+            }
+
+            flashcards = cards;
+            activeCardIndex = 0;
+            isCardFlipped = false;
+            
+            const badge = document.getElementById('flash-badge');
+            badge.innerText = flashcards.length;
+            badge.classList.remove('hidden');
+        }
+
+        function renderFlashcardsUI() {
+            const emptyState = document.getElementById('flashcards-empty-state');
+            const activeView = document.getElementById('flashcards-active-view');
+
+            if (flashcards.length === 0) {
+                emptyState.classList.remove('hidden');
+                activeView.classList.add('hidden');
+                return;
+            }
+
+            emptyState.classList.add('hidden');
+            activeView.classList.remove('hidden');
+
+            document.getElementById('flashcard-position-indicator').innerText = `Card ${activeCardIndex + 1} of ${flashcards.length}`;
+            document.getElementById('flashcard-front-text').innerText = flashcards[activeCardIndex].front;
+            document.getElementById('flashcard-back-text').innerText = flashcards[activeCardIndex].back;
+
+            const rotator = document.getElementById('flashcard-rotator');
+            if (isCardFlipped) {
+                rotator.classList.add('rotate-y-180');
+            } else {
+                rotator.classList.remove('rotate-y-180');
+            }
+        }
+
+        function flipFlashcard() {
+            isCardFlipped = !isCardFlipped;
+            const rotator = document.getElementById('flashcard-rotator');
+            if (isCardFlipped) {
+                rotator.classList.add('rotate-y-180');
+            } else {
+                rotator.classList.remove('rotate-y-180');
+            }
+        }
+
+        function prevFlashcard() {
+            if (activeCardIndex > 0) {
+                activeCardIndex--;
+                isCardFlipped = false;
+                renderFlashcardsUI();
+            }
+        }
+
+        function nextFlashcard() {
+            if (activeCardIndex < flashcards.length - 1) {
+                activeCardIndex++;
+                isCardFlipped = false;
+                renderFlashcardsUI();
+            } else {
+                activeCardIndex = 0;
+                isCardFlipped = false;
+                renderFlashcardsUI();
+            }
+        }
+
+        // 5. MODAL & PDF HANDLERS
+        function openAddSourceModal() {
+            document.getElementById('add-source-modal').classList.remove('hidden');
+            switchModalTab('text');
+        }
+
+        function closeAddSourceModal() {
+            document.getElementById('add-source-modal').classList.add('hidden');
+        }
+
+        function switchModalTab(target) {
+            modalTab = target;
+            const textBtn = document.getElementById('modal-tab-text-btn');
+            const pdfBtn = document.getElementById('modal-tab-pdf-btn');
+            const textPanel = document.getElementById('modal-tab-text');
+            const pdfPanel = document.getElementById('modal-tab-pdf');
+
+            if (modalTab === 'text') {
+                textBtn.className = "text-xs font-bold pb-1 border-b-2 border-indigo-500 text-indigo-400";
+                pdfBtn.className = "text-xs font-bold pb-1 border-b-2 border-transparent text-zinc-500";
+                textPanel.classList.remove('hidden');
+                pdfPanel.classList.add('hidden');
+            } else {
+                pdfBtn.className = "text-xs font-bold pb
